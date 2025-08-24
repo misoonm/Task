@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قارئ الباركود المتكامل</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* الهيدر */
+        .header {
+            background: rgba(0, 0, 0, 0.86);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .close-btn {
+            position: absolute;
+            left: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* منطقة الكاميرا */
+        .camera-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Overlay للماسح الضوئي */
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .scan-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.7);
+        }
+
+        .scan-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #00a2ff;
+        }
+
+        .corner-top-left {
+            top: -3px;
+            left: -3px;
+            border-right: none;
+            border-bottom: none;
+            border-radius: 10px 0 0 0;
+        }
+
+        .corner-top-right {
+            top: -3px;
+            right: -3px;
+            border-left: none;
+            border-bottom: none;
+            border-radius: 0 10px 0 0;
+        }
+
+        .corner-bottom-left {
+            bottom: -3px;
+            left: -3px;
+            border-right: none;
+            border-top: none;
+            border-radius: 0 0 0 10px;
+        }
+
+        .corner-bottom-right {
+            bottom: -3px;
+            right: -3px;
+            border-left: none;
+            border-top: none;
+            border-radius: 0 0 10px 0;
+        }
+
+        .scan-line {
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: linear-gradient(to right, transparent, #00a2ff, transparent);
+            top: 50%;
+            animation: scan 2s linear infinite;
+            border-radius: 3px;
+        }
+
+        @keyframes scan {
+            0% { top: 20%; }
+            50% { top: 80%; }
+            100% { top: 20%; }
+        }
+
+        /* التوجيهات والإرشادات */
+        .scan-guide {
+            position: absolute;
+            bottom: 120px;
+            text-align: center;
+            width: 100%;
+            color: #fff;
+            font-size: 16px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            z-index: 3;
+            padding: 0 20px;
+        }
+
+        /* الفوتر */
+        .footer {
+            background: rgba(0, 0, 0, 0.86);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 13px;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .icon-circle {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+        }
+
+        .flash-on .icon-circle {
+            background: rgba(0, 162, 255, 0.2);
+            color: #00a2ff;
+        }
+
+        /* نتائج المسح */
+        .result-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .result-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+        }
+
+        .result-content {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .result-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            margin-bottom: 24px;
+        }
+
+        .url-icon { background: rgba(33, 150, 243, 0.2); color: #2196F3; }
+        .email-icon { background: rgba(244, 67, 54, 0.2); color: #F44336; }
+        .sms-icon { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
+        .wifi-icon { background: rgba(156, 39, 176, 0.2); color: #9C27B0; }
+        .contact-icon { background: rgba(255, 152, 0, 0.2); color: #FF9800; }
+        .payment-icon { background: rgba(255, 193, 7, 0.2); color: #FFC107; }
+        .text-icon { background: rgba(96, 125, 139, 0.2); color: #607D8B; }
+        .map-icon { background: rgba(233, 30, 99, 0.2); color: #E91E63; }
+        .crypto-icon { background: rgba(103, 58, 183, 0.2); color: #673AB7; }
+        .default-icon { background: rgba(0, 162, 255, 0.2); color: #00a2ff; }
+
+        .result-text {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        .result-data {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 16px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            word-break: break-all;
+            margin-bottom: 24px;
+            font-size: 16px;
+            color: #fff;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .result-details {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 16px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 24px;
+            text-align: right;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .detail-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .detail-value {
+            color: #fff;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .result-btn {
+            padding: 12px 20px;
+            border-radius: 24px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .primary-btn {
+            background: #00a2ff;
+            color: white;
+        }
+
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .success-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .warning-btn {
+            background: #FF9800;
+            color: white;
+        }
+
+        .danger-btn {
+            background: #F44336;
+            color: white;
+        }
+
+        /* رسالة الإذن */
+        .permission-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .permission-icon {
+            font-size: 48px;
+            color: #00a2ff;
+            margin-bottom: 24px;
+        }
+
+        .permission-text {
+            font-size: 18px;
+            margin-bottom: 32px;
+            max-width: 400px;
+        }
+
+        /* تحسينات للكاميرا التلقائية */
+        .auto-start-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 5;
+            max-width: 80%;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #00a2ff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* قائمة التاريخ */
+        .history-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 25;
+            display: none;
+            flex-direction: column;
+        }
+
+        .history-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid #00a2ff;
+            cursor: pointer;
+        }
+
+        .history-data {
+            word-break: break-all;
+            margin-bottom: 8px;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .history-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* معرض الصور */
+        .gallery-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 25;
+            display: none;
+            flex-direction: column;
+        }
+
+        .gallery-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gallery-content {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .gallery-icon {
+            font-size: 64px;
+            color: #00a2ff;
+            margin-bottom: 24px;
+        }
+
+        .gallery-btn {
+            padding: 15px 30px;
+            border-radius: 24px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px;
+            background: #00a2ff;
+            color: white;
+        }
+
+        /* input file مخفي */
+        #imageInput {
+            display: none;
+        }
+
+        /* التكيف مع الشاشات المختلفة */
+        @media (max-height: 700px) {
+            .scan-frame {
+                width: 200px;
+                height: 200px;
+            }
+
+            .scan-guide {
+                bottom: 100px;
+                font-size: 14px;
+            }
+
+            .footer {
+                padding: 16px;
+            }
+
+            .icon-circle {
+                width: 48px;
+                height: 48px;
+                font-size: 18px;
+            }
+
+            .result-actions {
+                flex-direction: column;
+            }
+
+            .result-btn {
+                width: 100%;
+            }
+        }
+
+        /* تأثيرات للواقعية */
+        .focus-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.9) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* أنواع البيانات المختلفة */
+        .data-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            background: rgba(0, 162, 255, 0.2);
+            color: #00a2ff;
+        }
+
+        /* Toast Message */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 100;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="close-btn" onclick="closeApp()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1>مسح الباركود</h1>
+        </div>
+        
+        <div class="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <div class="focus-effect"></div>
+            <div class="scanner-overlay">
+                <div class="scan-frame">
+                    <div class="scan-corner corner-top-left"></div>
+                    <div class="scan-corner corner-top-right"></div>
+                    <div class="scan-corner corner-bottom-left"></div>
+                    <div class="scan-corner corner-bottom-right"></div>
+                    <div class="scan-line"></div>
+                </div>
+            </div>
+            <div class="scan-guide">
+                ضع الباركود داخل الإطار ليتم مسحه تلقائيًا
+            </div>
+            
+            <div class="auto-start-message" id="autoStartMessage">
+                <div class="loading-spinner"></div>
+                <p>جاري تشغيل الكاميرا تلقائيًا...</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="action-buttons">
+                <button class="action-btn" onclick="toggleFlash()" id="flashBtn">
+                    <div class="icon-circle">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <span>الفلاش</span>
+                </button>
+                <button class="action-btn" onclick="openGallery()">
+                    <div class="icon-circle">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <span>المعرض</span>
+                </button>
+                <button class="action-btn" onclick="showHistory()">
+                    <div class="icon-circle">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <span>السجل</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="result-container" id="resultContainer">
+        <div class="result-header">
+            <button class="close-btn" onclick="closeResult()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1 id="resultTitle">نتيجة المسح</h1>
+            <div style="width: 40px;"></div>
+        </div>
+        
+        <div class="result-content">
+            <div class="result-icon" id="resultIcon">
+                <i class="fas fa-check"></i>
+            </div>
+            <div class="data-type-badge" id="dataTypeBadge">نوع البيانات</div>
+            <div class="result-text" id="resultText">تم مسح الباركود بنجاح</div>
+            <div class="result-data" id="resultData"></div>
+            <div class="result-details" id="resultDetails" style="display: none;"></div>
+            
+            <div class="result-actions" id="resultActions">
+                </div>
+        </div>
+    </div>
+    
+    <div class="history-container" id="historyContainer">
+        <div class="history-header">
+            <button class="close-btn" onclick="closeHistory()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1>سجل المسح</h1>
+            <button class="close-btn" onclick="clearHistory()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        
+        <div class="history-content" id="historyContent">
+            </div>
+    </div>
+    
+    <div class="gallery-container" id="galleryContainer">
+        <div class="gallery-header">
+            <button class="close-btn" onclick="closeGallery()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h1>المعرض</h1>
+            <div style="width: 40px;"></div>
+        </div>
+        
+        <div class="gallery-content">
+            <div class="gallery-icon">
+                <i class="fas fa-images"></i>
+            </div>
+            <div class="result-text">اختر صورة تحتوي على باركود</div>
+            <button class="gallery-btn" onclick="document.getElementById('imageInput').click()">
+                <i class="fas fa-folder-open"></i> اختر من المعرض
+            </button>
+        </div>
+    </div>
+    
+    <input type="file" id="imageInput" accept="image/*">
+    
+    <div class="permission-message" id="permissionMessage">
+        <div class="permission-icon">
+            <i class="fas fa-camera"></i>
+        </div>
+        <div class="permission-text">
+            يتطلب تطبيق قارئ الباركود الوصول إلى الكاميرا لمسح الرموز. يرجى منح الإذن لاستخدام الكاميرا.
+        </div>
+        <button class="result-btn primary-btn" onclick="requestCameraPermission()">
+            منح الإذن للكاميرا
+        </button>
+    </div>
+
+    <div class="toast" id="toastMessage"></div>
+
+    <script>
+        //======================================================================
+        // العناصر الأساسية والمتغيرات
+        //======================================================================
+
+        const video = document.getElementById('video');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultData = document.getElementById('resultData');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultText = document.getElementById('resultText');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultDetails = document.getElementById('resultDetails');
+        const resultActions = document.getElementById('resultActions');
+        const dataTypeBadge = document.getElementById('dataTypeBadge');
+        const permissionMessage = document.getElementById('permissionMessage');
+        const autoStartMessage = document.getElementById('autoStartMessage');
+        const historyContainer = document.getElementById('historyContainer');
+        const historyContent = document.getElementById('historyContent');
+        const galleryContainer = document.getElementById('galleryContainer');
+        const imageInput = document.getElementById('imageInput');
+        const flashBtn = document.getElementById('flashBtn');
+        const toastMessage = document.getElementById('toastMessage');
+
+        let stream = null;
+        let barcodeDetector = null;
+        let scanningInterval = null;
+        let flashOn = false;
+        let scanHistory = JSON.parse(localStorage.getItem('scanHistory')) || [];
+
+        //======================================================================
+        // الثوابت وخريطة البيانات
+        //======================================================================
+
+        const DATA_TYPES = {
+            URL: 'رابط URL',
+            APP_STORE: 'متجر التطبيقات',
+            CUSTOM_URL: 'رابط مخصص',
+            LINK_LIST: 'قائمة الروابط',
+            PAYMENT: 'دفع',
+            EMAIL: 'البريد الإلكتروني',
+            SMS: 'رسالة SMS',
+            WHATSAPP: 'واتساب',
+            PHONE: 'مكالمة هاتفية',
+            CONTACT: 'بطاقة اتصال',
+            PDF: 'ملف PDF',
+            IMAGE: 'صورة',
+            AUDIO: 'صوت',
+            VIDEO: 'فيديو',
+            WIFI: 'واي فاي',
+            SOCIAL: 'وسائل التواصل',
+            TEXT: 'نص',
+            MAP: 'خريطة',
+            CALENDAR: 'حجز موعد',
+            CRYPTO: 'عملة رقمية',
+            UNKNOWN: 'غير معروف'
+        };
+
+        const BARCODE_TYPE_MAP = {
+            'qr_code': 'QR كود',
+            'ean_13': 'EAN-13',
+            'ean_8': 'EAN-8',
+            'code_128': 'Code 128',
+            'code_39': 'Code 39',
+            'upc_a': 'UPC-A',
+            'upc_e': 'UPC-E',
+            'code_93': 'Code 93',
+            'codabar': 'Codabar',
+            'data_matrix': 'Data Matrix',
+            'aztec': 'Aztec',
+            'pdf417': 'PDF417',
+            'itf': 'ITF'
+        };
+
+        //======================================================================
+        // وظائف الكاميرا والمسح
+        //======================================================================
+
+        /**
+         * تهيئة BarcodeDetector والتحقق من دعمه.
+         */
+        function initBarcodeDetector() {
+            if ('BarcodeDetector' in window) {
+                BarcodeDetector.getSupportedFormats()
+                    .then(formats => {
+                        barcodeDetector = new BarcodeDetector({ formats: formats });
+                        if (navigator.mediaDevices) {
+                            startCamera();
+                        } else {
+                            showError('الكاميرا غير مدعومة في متصفحك.');
+                            permissionMessage.style.display = 'flex';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('BarcodeDetector support error:', err);
+                        barcodeDetector = new BarcodeDetector({ 
+                            formats: ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39', 'upc_a', 'upc_e'] 
+                        });
+                        startCamera();
+                    });
+            } else {
+                showError('المتصفح الخاص بك لا يدعم ميزة كشف الباركود.');
+                permissionMessage.style.display = 'flex';
+            }
+        }
+
+        /**
+         * يطلب إذن الكاميرا ويبدأ تشغيلها.
+         */
+        function requestCameraPermission() {
+            permissionMessage.style.display = 'none';
+            startCamera();
+        }
+
+        /**
+         * يبدأ تشغيل الكاميرا ويبدأ عملية المسح.
+         */
+        async function startCamera() {
+            try {
+                autoStartMessage.style.display = 'block';
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    } 
+                });
+                video.srcObject = stream;
+                autoStartMessage.style.display = 'none';
+                permissionMessage.style.display = 'none';
+                video.onloadedmetadata = () => startScanning();
+            } catch (err) {
+                autoStartMessage.style.display = 'none';
+                permissionMessage.style.display = 'flex';
+                console.error('Failed to get camera access:', err);
+            }
+        }
+
+        /**
+         * يبدأ عملية مسح الباركود بشكل متقطع من الكاميرا.
+         */
+        function startScanning() {
+            if (scanningInterval) clearInterval(scanningInterval);
+            scanningInterval = setInterval(async () => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA && barcodeDetector) {
+                    try {
+                        const barcodes = await barcodeDetector.detect(video);
+                        if (barcodes.length > 0) {
+                            stopScanning();
+                            processBarcodeData(barcodes[0]);
+                        }
+                    } catch (err) {
+                        console.error('Barcode detection error:', err);
+                    }
+                }
+            }, 500);
+        }
+
+        /**
+         * يوقف عملية المسح.
+         */
+        function stopScanning() {
+            clearInterval(scanningInterval);
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        /**
+         * يمسح الباركود من كائن الصورة.
+         * @param {HTMLImageElement} img - كائن الصورة.
+         */
+        async function scanBarcodeFromImage(img) {
+            try {
+                if (!barcodeDetector) {
+                    showError('ماسح الباركود غير متاح');
+                    return;
+                }
+                const barcodes = await barcodeDetector.detect(img);
+                if (barcodes.length > 0) {
+                    processBarcodeData(barcodes[0]);
+                    closeGallery();
+                } else {
+                    showError('لم يتم العثور على باركود في الصورة');
+                }
+            } catch (err) {
+                console.error('Error scanning from image:', err);
+                showError('فشل في مسح الصورة: ' + err.message);
+            }
+        }
+
+        /**
+         * يقلب حالة الفلاش (تشغيل/إيقاف).
+         */
+        async function toggleFlash() {
+            if (!stream) return;
+
+            const videoTrack = stream.getVideoTracks()[0];
+            const capabilities = videoTrack.getCapabilities();
+            if ('torch' in capabilities) {
+                try {
+                    await videoTrack.applyConstraints({
+                        advanced: [{ torch: !flashOn }]
+                    });
+                    flashOn = !flashOn;
+                    flashBtn.classList.toggle('flash-on', flashOn);
+                } catch (err) {
+                    console.error('Failed to toggle flash:', err);
+                }
+            } else {
+                showToast('الفلاش غير مدعوم في هذا الجهاز.');
+            }
+        }
+
+        //======================================================================
+        // وظائف معالجة النتائج والعرض
+        //======================================================================
+
+        /**
+         * يعالج بيانات الباركود الممسوحة ويحفظها ويعرضها.
+         * @param {Object} barcode - كائن الباركود من BarcodeDetector.
+         */
+        function processBarcodeData(barcode) {
+            const rawValue = barcode.rawValue;
+            const dataType = detectDataType(rawValue);
+            saveToHistory({
+                data: rawValue,
+                type: barcode.format,
+                dataType: dataType,
+                timestamp: new Date().toLocaleString(),
+                date: new Date().toISOString()
+            });
+            displayResult(rawValue, dataType, barcode.format);
+        }
+
+        /**
+         * يكشف نوع البيانات بناءً على محتواها.
+         * @param {string} data - البيانات المراد فحصها.
+         * @returns {string} - نوع البيانات المطابق.
+         */
+        function detectDataType(data) {
+            if (data.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return 'EMAIL';
+            if (data.match(/^tel:/i) || data.match(/^\+?[0-9\s\-\(\)]{10,}$/)) return 'PHONE';
+            if (data.match(/^smsto:/i)) return 'SMS';
+            if (data.match(/^whatsapp:/i)) return 'WHATSAPP';
+            if (data.match(/^WIFI:/i)) return 'WIFI';
+            if (data.match(/^BEGIN:VCARD/i)) return 'CONTACT';
+            if (data.match(/^geo:/i) || data.match(/maps\./i)) return 'MAP';
+            if (data.match(/^BEGIN:VEVENT/i)) return 'CALENDAR';
+            if (data.match(/^(bitcoin:|ethereum:)/i)) return 'CRYPTO';
+            if (data.match(/(facebook|twitter|instagram|linkedin|youtube|tiktok)\./i)) return 'SOCIAL';
+            if (data.match(/(play\.google\.com|apps\.apple\.com)/i)) return 'APP_STORE';
+            if (data.match(/(paypal|stripe|venmo|zelle)/i)) return 'PAYMENT';
+            if (data.match(/^https?:\/\//i)) return 'URL';
+            if (data.match(/\.(pdf|jpg|jpeg|png|gif|mp3|mp4|avi|mov)$/i)) return 'UNKNOWN';
+            return 'TEXT';
+        }
+
+        /**
+         * يعرض النتيجة بشكل كامل مع الأيقونات والتفاصيل والأزرار.
+         * @param {string} data - البيانات الممسوحة.
+         * @param {string} dataType - نوع البيانات المكتشف.
+         */
+        function displayResult(data, dataType) {
+            let iconClass = 'fas fa-check default-icon';
+            let title = 'تم المسح بنجاح';
+            let text = 'تم مسح الباركود بنجاح';
+            
+            switch(dataType) {
+                case 'URL': iconClass = 'fas fa-link url-icon'; title = 'رابط ويب'; text = 'تم اكتشاف رابط ويب'; break;
+                case 'EMAIL': iconClass = 'fas fa-envelope email-icon'; title = 'بريد إلكتروني'; text = 'تم اكتشاف عنوان بريد إلكتروني'; break;
+                case 'SMS': iconClass = 'fas fa-comment sms-icon'; title = 'رسالة نصية'; text = 'تم اكتشاف رسالة نصية'; break;
+                case 'WHATSAPP': iconClass = 'fab fa-whatsapp success-btn'; title = 'واتساب'; text = 'تم اكتشاف رسالة واتساب'; break;
+                case 'PHONE': iconClass = 'fas fa-phone contact-icon'; title = 'رقم هاتف'; text = 'تم اكتشاف رقم هاتف'; break;
+                case 'WIFI': iconClass = 'fas fa-wifi wifi-icon'; title = 'شبكة WiFi'; text = 'تم اكتشاف إعدادات WiFi'; break;
+                case 'CONTACT': iconClass = 'fas fa-address-card contact-icon'; title = 'بطاقة اتصال'; text = 'تم اكتشاف بطاقة اتصال'; break;
+                case 'PAYMENT': iconClass = 'fas fa-credit-card payment-icon'; title = 'معلومات دفع'; text = 'تم اكتشاف معلومات دفع'; break;
+                case 'CRYPTO': iconClass = 'fas fa-coins crypto-icon'; title = 'عملة رقمية'; text = 'تم اكتشاف عنوان عملة رقمية'; break;
+                case 'MAP': iconClass = 'fas fa-map-marked-alt map-icon'; title = 'موقع على الخريطة'; text = 'تم اكتشاف موقع على الخريطة'; break;
+            }
+            
+            resultData.textContent = data;
+            dataTypeBadge.textContent = DATA_TYPES[dataType] || 'غير معروف';
+            resultIcon.className = 'result-icon ' + iconClass.split(' ')[0];
+            resultIcon.innerHTML = `<i class="${iconClass}"></i>`;
+            resultTitle.textContent = title;
+            resultText.textContent = text;
+            
+            setupResultDetails(data, dataType);
+            setupActionButtons(data, dataType);
+            
+            resultContainer.style.display = 'flex';
+        }
+
+        /**
+         * ينشئ ويعرض تفاصيل إضافية للنتيجة.
+         * @param {string} data - البيانات الممسوحة.
+         * @param {string} dataType - نوع البيانات.
+         */
+        function setupResultDetails(data, dataType) {
+            resultDetails.innerHTML = '';
+            resultDetails.style.display = 'none';
+            let detailsHtml = '';
+            
+            switch(dataType) {
+                case 'WIFI':
+                    const wifiMatch = data.match(/WIFI:T:([^;]+);S:([^;]+);P:([^;]+);;/);
+                    if (wifiMatch) {
+                        detailsHtml = `
+                            <div class="detail-item"><span>نوع الشبكة:</span><span>${wifiMatch[1] || 'WPA/WPA2'}</span></div>
+                            <div class="detail-item"><span>اسم الشبكة:</span><span>${wifiMatch[2] || ''}</span></div>
+                            <div class="detail-item"><span>كلمة المرور:</span><span>${wifiMatch[3] || ''}</span></div>
+                        `;
+                    }
+                    break;
+                case 'EMAIL':
+                    detailsHtml = `
+                        <div class="detail-item"><span>عنوان البريد:</span><span>${data}</span></div>
+                    `;
+                    break;
+                case 'PHONE':
+                    const phoneNumber = data.replace(/^tel:/, '');
+                    detailsHtml = `
+                        <div class="detail-item"><span>رقم الهاتف:</span><span>${phoneNumber}</span></div>
+                    `;
+                    break;
+            }
+            
+            if (detailsHtml) {
+                resultDetails.innerHTML = detailsHtml;
+                resultDetails.style.display = 'block';
+            }
+        }
+
+        /**
+         * ينشئ ويعرض أزرار الإجراءات للنتيجة.
+         * @param {string} data - البيانات الممسوحة.
+         * @param {string} dataType - نوع البيانات.
+         */
+        function setupActionButtons(data, dataType) {
+            resultActions.innerHTML = '';
+            const copyBtn = createButton('نسخ', 'fas fa-copy', 'secondary-btn', () => copyToClipboard(data));
+            const shareBtn = createButton('مشاركة', 'fas fa-share-alt', 'secondary-btn', () => shareData(data));
+            resultActions.appendChild(copyBtn);
+            resultActions.appendChild(shareBtn);
+            
+            switch(dataType) {
+                case 'URL':
+                    resultActions.appendChild(createButton('فتح الرابط', 'fas fa-external-link-alt', 'primary-btn', () => window.open(data, '_blank')));
+                    break;
+                case 'EMAIL':
+                    resultActions.appendChild(createButton('إرسال بريد', 'fas fa-paper-plane', 'primary-btn', () => window.location.href = `mailto:${data}`));
+                    break;
+                case 'PHONE':
+                    resultActions.appendChild(createButton('اتصال', 'fas fa-phone', 'success-btn', () => window.location.href = `tel:${data.replace(/^tel:/, '')}`));
+                    break;
+                case 'SMS':
+                    resultActions.appendChild(createButton('إرسال SMS', 'fas fa-comment', 'primary-btn', () => window.location.href = data.replace('smsto:', 'sms:')));
+                    break;
+                case 'WHATSAPP':
+                    resultActions.appendChild(createButton('فتح واتساب', 'fab fa-whatsapp', 'success-btn', () => window.open(data, '_blank')));
+                    break;
+                case 'WIFI':
+                    resultActions.appendChild(createButton('نسخ إعدادات WiFi', 'fas fa-wifi', 'primary-btn', () => copyToClipboard(data)));
+                    break;
+                case 'MAP':
+                    resultActions.appendChild(createButton('فتح الخريطة', 'fas fa-map-marked-alt', 'primary-btn', () => window.open(data, '_blank')));
+                    break;
+                case 'CONTACT':
+                    resultActions.appendChild(createButton('حفظ جهة اتصال', 'fas fa-save', 'primary-btn', () => saveContact(data)));
+                    break;
+            }
+            
+            resultActions.appendChild(createButton('مسح مرة أخرى', 'fas fa-redo', 'warning-btn', closeResult));
+        }
+
+        /**
+         * يغلق شاشة النتائج ويعود للمسح.
+         */
+        function closeResult() {
+            resultContainer.style.display = 'none';
+            startCamera();
+        }
+
+        //======================================================================
+        // وظائف إدارة السجل
+        //======================================================================
+
+        /**
+         * يحفظ عنصرًا جديدًا في سجل المسح.
+         * @param {Object} scanItem - عنصر المسح.
+         */
+        function saveToHistory(scanItem) {
+            scanHistory.unshift(scanItem);
+            if (scanHistory.length > 50) scanHistory.pop();
+            localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+        }
+
+        /**
+         * يعرض واجهة السجل.
+         */
+        function showHistory() {
+            stopScanning();
+            renderHistory();
+            historyContainer.style.display = 'flex';
+        }
+
+        /**
+         * ينشئ محتوى السجل للعرض.
+         */
+        function renderHistory() {
+            if (scanHistory.length === 0) {
+                historyContent.innerHTML = `<div class="empty-history"><i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px;"></i><p>لا توجد عمليات مسح سابقة</p></div>`;
+                return;
+            }
+            historyContent.innerHTML = scanHistory.map((item, index) => `
+                <div class="history-item" onclick="showHistoryItem(${index})">
+                    <div class="history-data">${item.data}</div>
+                    <div class="history-meta">
+                        <span>${formatBarcodeType(item.type)}</span>
+                        <span>${item.timestamp}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * يعرض عنصرًا محددًا من السجل.
+         * @param {number} index - فهرس العنصر في السجل.
+         */
+        function showHistoryItem(index) {
+            const item = scanHistory[index];
+            displayResult(item.data, item.dataType, item.type);
+            closeHistory();
+        }
+        
+        /**
+         * يغلق واجهة السجل.
+         */
+        function closeHistory() {
+            historyContainer.style.display = 'none';
+            startCamera();
+        }
+
+        /**
+         * يمسح سجل المسح بالكامل.
+         */
+        function clearHistory() {
+            scanHistory = [];
+            localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+            renderHistory();
+            showToast('تم مسح السجل بنجاح.');
+        }
+
+        //======================================================================
+        // وظائف المعرض والملفات
+        //======================================================================
+
+        /**
+         * يفتح واجهة المعرض.
+         */
+        function openGallery() {
+            stopScanning();
+            galleryContainer.style.display = 'flex';
+        }
+
+        /**
+         * يغلق واجهة المعرض.
+         */
+        function closeGallery() {
+            galleryContainer.style.display = 'none';
+            startCamera();
+        }
+        
+        /**
+         * يستمع لحدث اختيار الصورة من المعرض.
+         */
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const img = new Image();
+            img.onload = function() {
+                scanBarcodeFromImage(img);
+                URL.revokeObjectURL(img.src);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+
+        //======================================================================
+        // وظائف مساعدة عامة
+        //======================================================================
+
+        /**
+         * ينشئ عنصراً زر HTML.
+         * @param {string} text - نص الزر.
+         * @param {string} icon - أيقونة FontAwesome.
+         * @param {string} style - فئة CSS للزر.
+         * @param {function} onClick - دالة للتشغيل عند النقر.
+         * @returns {HTMLButtonElement} - عنصر الزر.
+         */
+        function createButton(text, icon, style, onClick) {
+            const btn = document.createElement('button');
+            btn.className = `result-btn ${style}`;
+            btn.innerHTML = `<i class="${icon}"></i> ${text}`;
+            btn.onclick = onClick;
+            return btn;
+        }
+
+        /**
+         * ينسخ نصًا إلى الحافظة.
+         * @param {string} text - النص المراد نسخه.
+         */
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('تم النسخ إلى الحافظة');
+            } catch (err) {
+                showError('فشل نسخ النص.');
+            }
+        }
+
+        /**
+         * يشارك نصًا باستخدام Web Share API.
+         * @param {string} text - النص المراد مشاركته.
+         */
+        function shareData(text) {
+            if (navigator.share) {
+                navigator.share({ title: 'بيانات الباركود', text: text }).catch(err => console.error('Error sharing:', err));
+            } else {
+                showToast('المشاركة غير مدعومة في هذا المتصفح.');
+            }
+        }
+
+        /**
+         * يعرض رسالة تنبيه (Toast).
+         * @param {string} message - نص الرسالة.
+         */
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toastMessage.style.display = 'block';
+            toastMessage.style.opacity = '1';
+            setTimeout(() => {
+                toastMessage.style.opacity = '0';
+                setTimeout(() => {
+                    toastMessage.style.display = 'none';
+                }, 500);
+            }, 3000);
+        }
+        
+        /**
+         * يعرض رسالة خطأ.
+         * @param {string} message - نص الخطأ.
+         */
+        function showError(message) {
+            showToast('خطأ: ' + message);
+        }
+
+        /**
+         * ينسق نوع الباركود ليكون سهل القراءة.
+         * @param {string} type - نوع الباركود.
+         * @returns {string} - النوع المنسق.
+         */
+        function formatBarcodeType(type) {
+            return BARCODE_TYPE_MAP[type] || type;
+        }
+
+        /**
+         * وظيفة توضيحية لحفظ جهة اتصال (تنسخ البيانات).
+         * @param {string} vcardData - بيانات VCard.
+         */
+        function saveContact(vcardData) {
+            copyToClipboard(vcardData);
+        }
+
+        /**
+         * يغلق التطبيق.
+         */
+        function closeApp() {
+            // يمكن إضافة منطق لإغلاق التطبيق هنا، مثل إيقاف الكاميرا والعودة للصفحة السابقة.
+            stopScanning();
+            history.back();
+        }
+
+        //======================================================================
+        // التهيئة وبدء التطبيق
+        //======================================================================
+
+        window.addEventListener('load', () => {
+            initBarcodeDetector();
+        });
+    </script>
+</body>
+</html>
+
