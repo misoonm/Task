@@ -103,7 +103,7 @@ function openPayCreditModal(invoiceNumber) {
     payModal.show();
 }
 
-// تأكيد تسديد الدين
+// تأكيد تسديد الدين - النسخة المعدلة
 function confirmCreditPayment() {
     const invoiceNumber = document.getElementById('credit-invoice-id').value;
     const paymentAmount = parseFloat(document.getElementById('credit-payment-amount').value);
@@ -132,6 +132,9 @@ function confirmCreditPayment() {
     // تحديث المبلغ المتبقي
     sale.remainingAmount -= paymentAmount;
     
+    // إضافة المبلغ المسدد إلى إجمالي المبيعات
+    const sales = JSON.parse(localStorage.getItem('sales') || '[]');
+    
     if (sale.remainingAmount <= 0) {
         // إذا تم سداد كامل المبلغ، نقل الفاتورة إلى الفواتير المسددة
         const paidCreditSales = JSON.parse(localStorage.getItem('paidCreditSales') || '[]');
@@ -145,18 +148,52 @@ function confirmCreditPayment() {
         // إزالة الفاتورة من الفواتير الآجلة
         creditSales.splice(saleIndex, 1);
         
-        alert('تم سداد الدين بالكامل بنجاح');
+        // إنشاء فاتورة بيع عادية وإضافتها إلى المبيعات
+        const normalSale = {
+            invoiceNumber: sale.invoiceNumber,
+            date: sale.paymentDate, // استخدام تاريخ التسديد
+            items: sale.items,
+            total: sale.total,
+            discount: sale.discount || 0,
+            paymentMethod: sale.paymentMethod,
+            employee: sale.employee || 'مدير النظام'
+        };
+        
+        sales.push(normalSale);
+        
+        alert('تم سداد الدين بالكامل بنجاح وتم إضافة المبلغ إلى إجمالي المبيعات');
     } else {
         // إذا لم يتم سداد كامل المبلغ، تحديث الفاتورة فقط
         creditSales[saleIndex] = sale;
-        alert('تم تسديد جزء من الدين بنجاح');
+        
+        // إنشاء فاتورة بيع جزئي للمبلغ المسدد فقط
+        const partialSale = {
+            invoiceNumber: `PART-${sale.invoiceNumber}-${Date.now()}`,
+            date: new Date().toLocaleDateString('en-CA'),
+            items: [], // لن تضيف المنتجات لأنها أضيفت بالفعل عند البيع الآجل
+            total: paymentAmount,
+            discount: 0,
+            paymentMethod: paymentMethod,
+            employee: sale.employee || 'مدير النظام',
+            originalInvoice: sale.invoiceNumber,
+            isPartialPayment: true
+        };
+        
+        sales.push(partialSale);
+        
+        alert('تم تسديد جزء من الدين بنجاح وتم إضافة المبلغ إلى إجمالي المبيعات');
     }
     
     // حفظ البيانات المحدثة
     localStorage.setItem('creditSales', JSON.stringify(creditSales));
+    localStorage.setItem('sales', JSON.stringify(sales));
     
     // إغلاق النموذج
-    bootstrap.Modal.getInstance(document.getElementById('payCreditModal')).hide();
+    const payCreditModal = document.getElementById('payCreditModal');
+    if (payCreditModal) {
+        const modal = bootstrap.Modal.getInstance(payCreditModal);
+        if (modal) modal.hide();
+    }
     
     // إعادة تحميل البيانات
     loadCreditSales();
