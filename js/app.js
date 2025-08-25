@@ -18,9 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSuppliers();
     loadCreditSales(); // تحميل المبيعات الآجلة
     
-    // إعداد معالجات الأحداث
-    setupEventHandlers();
-    
-    // تحميل الإعدادات
-    loadSettings();
+    // إعداد معالجات الأحداث (يجب أن يكون هذا آخر شيء)
+    setTimeout(setupEventHandlers, 100); // تأخير بسيط لضمان تحميل كل العناصر
 });
