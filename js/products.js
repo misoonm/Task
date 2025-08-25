@@ -118,19 +118,20 @@ function editProduct(productId) {
     editModal.show();
 }
 
+
 // تحديث المنتج
-function updateProduct() {
-    const productId = document.getElementById('editProductId').value;
-    const name = document.getElementById('editProductName').value;
-    const barcode = document.getElementById('editProductBarcode').value;
-    const category = document.getElementById('editProductCategory').value;
-    const price = parseFloat(document.getElementById('editProductPrice').value);
-    const cost = parseFloat(document.getElementById('editProductCost').value);
-    const quantity = parseInt(document.getElementById('editProductQuantity').value);
-    const supplierId = document.getElementById('editProductSupplier').value;
-    const expiryDate = document.getElementById('editProductExpiry').value;
-    const description = document.getElementById('editProductDescription').value;
-    const imageFile = document.getElementById('editProductImage').files[0];
+// حفظ منتج جديد
+function saveProduct() {
+    const name = document.getElementById('productName').value;
+    const barcode = document.getElementById('productBarcode').value;
+    const category = document.getElementById('productCategory').value;
+    const price = parseFloat(document.getElementById('productPrice').value);
+    const cost = parseFloat(document.getElementById('productCost').value);
+    const quantity = parseInt(document.getElementById('productQuantity').value);
+    const supplierId = document.getElementById('productSupplier').value;
+    const expiryDate = document.getElementById('productExpiry').value;
+    const description = document.getElementById('productDescription').value;
+    const imageFile = document.getElementById('productImage').files[0];
     
     if (!name || !category || isNaN(price) || isNaN(quantity) || isNaN(cost)) {
         alert('يرجى ملء جميع الحقول المطلوبة');
@@ -138,64 +139,47 @@ function updateProduct() {
     }
     
     const products = JSON.parse(localStorage.getItem('products') || '[]');
-    const productIndex = products.findIndex(p => p.id === productId);
-    
-    if (productIndex === -1) {
-        alert('المنتج غير موجود');
-        return;
-    }
+    const newProduct = {
+        id: Date.now().toString(),
+        name,
+        barcode: barcode || null,
+        category,
+        price,
+        cost,
+        quantity,
+        supplierId: supplierId || null,
+        expiryDate: expiryDate || null,
+        description,
+        image: null
+    };
     
     // معالجة صورة المنتج إذا تم تحميلها
     if (imageFile) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            products[productIndex] = {
-                ...products[productIndex],
-                name,
-                barcode: barcode || null,
-                category,
-                price,
-                cost,
-                quantity,
-                supplierId: supplierId || null,
-                expiryDate: expiryDate || null,
-                description,
-                image: e.target.result
-            };
-            
-            localStorage.setItem('products', JSON.stringify(products));
-            completeUpdateProduct();
+            newProduct.image = e.target.result;
+            completeSaveProduct(newProduct, products);
         };
         reader.readAsDataURL(imageFile);
     } else {
-        products[productIndex] = {
-            ...products[productIndex],
-            name,
-            barcode: barcode || null,
-            category,
-            price,
-            cost,
-            quantity,
-            supplierId: supplierId || null,
-            expiryDate: expiryDate || null,
-            description
-        };
-        
-        localStorage.setItem('products', JSON.stringify(products));
-        completeUpdateProduct();
+        completeSaveProduct(newProduct, products);
     }
 }
 
-function completeUpdateProduct() {
+function completeSaveProduct(newProduct, products) {
+    products.push(newProduct);
+    localStorage.setItem('products', JSON.stringify(products));
+    
     // إغلاق النموذج
-    bootstrap.Modal.getInstance(document.getElementById('editProductModal')).hide();
+    bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
+    document.getElementById('add-product-form').reset();
     
     // إعادة تحميل البيانات
     loadProducts();
     loadAvailableProducts();
     loadDashboardData();
     
-    alert('تم تحديث المنتج بنجاح');
+    alert('تم حفظ المنتج بنجاح');
 }
 
 // حذف منتج
