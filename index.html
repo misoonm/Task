@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة المحلات التجارية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@0.19.1"></script>
+    <style src="style.css"></style>
+</head>
+<body>
+    <div class="navbar-top">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-4">
+                    <span id="store-name">متجري</span>
+                </div>
+                <div class="col-4 text-center">
+                    <span id="current-date"></span>
+                </div>
+                <div class="col-4 text-end">
+                    <span>مرحباً، مدير النظام</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <div id="dashboard-section" class="section active">
+            <h2 class="mb-4">لوحة التحكم</h2>
+            
+            <div class="row">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card card-dashboard card-primary h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">إجمالي المبيعات</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-sales">0 ريال</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card card-dashboard card-success h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">عدد المنتجات</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-products">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-box fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card card-dashboard card-warning h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">منتجات منخفضة المخزون</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-stock-count">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card card-dashboard card-danger h-100">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">المبيعات الآجلة</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="credit-sales">0 ريال</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-credit-card fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">المنتجات الأكثر مبيعاً</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="top-products-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>رقم المنتج</th>
+                                            <th>اسم المنتج</th>
+                                            <th>الكمية المباعة</th>
+                                            <th>الإيرادات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">آخر المبيعات</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="recent-sales-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>رقم الفاتورة</th>
+                                            <th>التاريخ</th>
+                                            <th>المبلغ</th>
+                                            <th>طريقة الدفع</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3 bg-warning">
+                            <h6 class="m-0 font-weight-bold text-white">المنتجات قاربت صلاحيتها على الانتهاء</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="expiring-products-list">
+                                </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-6 col-lg-6">
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3 bg-danger">
+                            <h6 class="m-0 font-weight-bold text-white">المنتجات التي أوشكت على النفاذ</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="low-stock-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>اسم المنتج</th>
+                                            <th>الفئة</th>
+                                            <th>المخزون المتبقي</th>
+                                            <th>الإجراء</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="products-section" class="section">
+            <h2 class="mb-4">إدارة المنتجات</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="input-group search-box">
+                        <input type="text" class="form-control" placeholder="بحث عن منتج..." id="product-search">
+                        <button class="btn btn-primary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                        <i class="bi bi-plus-circle"></i> إضافة منتج جديد
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">قائمة المنتجات</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="products-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>صورة</th>
+                                    <th>رقم المنتج</th>
+                                    <th>اسم المنتج</th>
+                                    <th>الفئة</th>
+                                    <th>تاريخ التوريد</th>
+                                    <th>السعر (ريال يمني)</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="pos-section" class="section">
+            <h2 class="mb-4">نقطة البيع</h2>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group search-box">
+                        <input type="text" class="form-control" placeholder="بحث عن منتج..." id="pos-product-search">
+                        <button class="btn btn-primary" type="button" id="barcode-btn">
+                            <i class="bi bi-upc-scan"></i> مسح الباركود
+                        </button>
+                    </div>
+                    
+
+                    <div class="card card-dashboard mt-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">سلة المشتريات</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="cart-items">
+                                <p class="text-center text-muted" id="empty-cart-message">السلة فارغة</p>
+                            </div>
+                            
+                            <div class="mt-3" id="discount-section" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>الخصم:</span>
+                                    <div>
+                                        <input type="number" class="form-control discount-input" id="discount-value" min="0" value="0">
+                                        <select class="form-select discount-input" id="discount-type">
+                                            <option value="percent">%</option>
+                                            <option value="fixed">ريال</option>
+                                        </select>
+                                        <button class="btn btn-sm btn-outline-primary" id="apply-discount-btn">تطبيق</button>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>قيمة الخصم:</span>
+                                    <span id="discount-amount">0 ريال</span>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <button class="btn btn-danger" id="clear-cart-btn">
+                                    <i class="bi bi-trash"></i> مسح السلة
+                                </button>
+                                <div>
+                                    <span class="fw-bold">الإجمالي: </span>
+                                    <span id="cart-total">0 ريال</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <label class="form-label">طريقة الدفع:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="نقدي" checked>
+                                    <label class="form-check-label" for="cashPayment">نقدي</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="cardPayment" value="بطاقة">
+                                    <label class="form-check-label" for="cardPayment">بطاقة</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="transferPayment" value="تحويل">
+                                    <label class="form-check-label" for="transferPayment">تحويل</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="creditPayment" value="آجل">
+                                    <label class="form-check-label" for="creditPayment">آجل (دين)</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3" id="customer-section" style="display: none;">
+                                <label for="customer-name" class="form-label">اسم العميل (للبيع الآجل):</label>
+                                <input type="text" class="form-control" id="customer-name">
+                            </div>
+                            
+                            <button class="btn btn-success btn-lg w-100 mt-3" id="complete-sale-btn">
+                                <i class="bi bi-check-circle"></i> إتمام البيع
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card card-dashboard">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">المنتجات المتاحة</h6>
+                        </div>
+                        <div class="card-body" id="available-products" style="max-height: 70vh; overflow-y: auto;">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="reports-section" class="section">
+            <h2 class="mb-4">التقارير والإحصائيات</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <label class="form-label">الفترة:</label>
+                    <select class="form-select" id="report-period">
+                        <option value="today">اليوم</option>
+                        <option value="week">أسبوع</option>
+                        <option value="month">شهر</option>
+                        <option value="year">سنة</option>
+                        <option value="custom">مخصص</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3" id="custom-from-container" style="display: none;">
+                    <label class="form-label">من:</label>
+                    <input type="date" class="form-control" id="report-from">
+                </div>
+                
+                <div class="col-md-3" id="custom-to-container" style="display: none;">
+                    <label class="form-label">إلى:</label>
+                    <input type="date" class="form-control" id="report-to">
+                </div>
+                
+                <div class="col-md-3 align-self-end">
+                    <button class="btn btn-primary w-100" id="apply-filter-btn">
+                        <i class="bi bi-filter"></i> تطبيق الفلتر
+                    </button>
+                </div>
+            </div>
+            
+            <ul class="nav nav-tabs mb-4" id="reportsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" type="button" role="tab">تقارير المخزون</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button" role="tab">تقارير المبيعات</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab">تقارير مالية</button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="reportsTabContent">
+                <div class="tab-pane fade show active" id="inventory" role="tabpanel">
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">تقارير المخزون</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="inventory-report-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>اسم المنتج</th>
+                                            <th>الفئة</th>
+                                            <th>المخزون المتبقي</th>
+                                            <th>قيمة المخزون</th>
+                                            <th>الحالة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3 bg-warning">
+                            <h6 class="m-0 font-weight-bold text-white">المنتجات قاربت صلاحيتها على الانتهاء</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="expiry-report-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>اسم المنتج</th>
+                                            <th>الفئة</th>
+                                            <th>الكمية</th>
+                                            <th>تاريخ الانتهاء</th>
+                                            <th>الأيام المتبقية</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="sales" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card card-dashboard mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">مبيعات حسب الفئة</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="salesByCategoryChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card card-dashboard mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">المبيعات اليومية</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="dailySalesChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">المبيعات حسب الموظف</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="salesByEmployeeChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">تفاصيل المبيعات</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="sales-report-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>رقم الفاتورة</th>
+                                            <th>التاريخ</th>
+                                            <th>الموظف</th>
+                                            <th>المبلغ</th>
+                                            <th>طريقة الدفع</th>
+                                            <th>الإجراءات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-pane fade" id="financial" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card card-dashboard mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">الأرباح والمصروفات</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="profitExpensesChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card card-dashboard mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">تحليل الأرباح</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="profitAnalysisChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card card-dashboard mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">التدفق النقدي</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="cashflow-table" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>التاريخ</th>
+                                            <th>الوصف</th>
+                                            <th>الدخل</th>
+                                            <th>المصروف</th>
+                                            <th>الرصيد</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn btn-success mb-4" id="generate-report-btn">
+                <i class="bi bi-file-earmark-pdf"></i> توليد التقرير
+            </button>
+        </div>
+        
+        <div id="suppliers-section" class="section">
+            <h2 class="mb-4">إدارة الموردين</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="input-group search-box">
+                        <input type="text" class="form-control" placeholder="بحث عن مورد..." id="supplier-search">
+                        <button class="btn btn-primary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                        <i class="bi bi-plus-circle"></i> إضافة مورد جديد
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card card-dashboard">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">قائمة الموردين</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="suppliers-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>اسم المورد</th>
+                                    <th>جهة الاتصال</th>
+                                    <th>الهاتف</th>
+                                    <th>البريد الإلكتروني</th>
+                                    <th>المنتجات الموردة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card card-dashboard mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">سجل المشتريات من الموردين</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="purchases-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>رقم الفاتورة</th>
+                                    <th>التاريخ</th>
+                                    <th>المورد</th>
+                                    <th>المنتجات</th>
+                                    <th>المبلغ</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- قسم جديد للمبيعات الآجلة -->
+        <div id="credit-section" class="section">
+            <h2 class="mb-4">إدارة المبيعات الآجلة</h2>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="input-group search-box">
+                        <input type="text" class="form-control" placeholder="بحث باسم العميل..." id="credit-search">
+                        <button class="btn btn-primary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-info" id="refresh-credit-btn">
+                        <i class="bi bi-arrow-clockwise"></i> تحديث
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card card-dashboard">
+                <div class="card-header py-3 bg-warning">
+                    <h6 class="m-0 font-weight-bold text-white">الفواتير الآجلة (غير المسددة)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="credit-sales-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>رقم الفاتورة</th>
+                                    <th>التاريخ</th>
+                                    <th>اسم العميل</th>
+                                    <th>إجمالي المبلغ</th>
+                                    <th>المبلغ المتبقي</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card card-dashboard mt-4">
+                <div class="card-header py-3 bg-success">
+                    <h6 class="m-0 font-weight-bold text-white">الفواتير المسددة</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="paid-credit-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>رقم الفاتورة</th>
+                                    <th>التاريخ</th>
+                                    <th>اسم العميل</th>
+                                    <th>إجمالي المبلغ</th>
+                                    <th>تاريخ التسديد</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="navbar-bottom">
+        <div class="container">
+            <div class="row">
+                <div class="col-2 nav-item-bottom active" data-section="dashboard-section">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>لوحة التحكم</span>
+                </div>
+                <div class="col-2 nav-item-bottom" data-section="products-section">
+                    <i class="bi bi-box-seam"></i>
+                    <span>المنتجات</span>
+                </div>
+                <div class="col-2 nav-item-bottom" data-section="pos-section">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>نقطة البيع</span>
+                </div>
+                <div class="col-2 nav-item-bottom" data-section="reports-section">
+                    <i class="bi bi-graph-up"></i>
+                    <span>التقارير</span>
+                </div>
+                <div class="col-2 nav-item-bottom" data-section="suppliers-section">
+                    <i class="bi bi-truck"></i>
+                    <span>الموردين</span>
+                </div>
+                <div class="col-2 nav-item-bottom" data-section="credit-section">
+                    <i class="bi bi-credit-card"></i>
+                    <span>آجل</span>
+                </div>      
+            </div>
+        </div>
+    </nav>
+
+         <!-- ماسح الباركود -->
+    <div class="barcode-scanner" id="barcode-scanner">
+        <video id="barcode-video"></video>
+        <div class="scanner-controls">
+            <button class="btn btn-danger" id="close-scanner-btn">إغلاق الماسح</button>
+        </div>
+    </div>
+
+    <!-- Modal لتسديد الدين -->
+    <div class="modal fade" id="payCreditModal" tabindex="-1" aria-labelledby="payCreditModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="payCreditModalLabel">تسديد الدين</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="pay-credit-form">
+                        <input type="hidden" id="credit-invoice-id">
+                        <div class="mb-3">
+                            <label class="form-label">رقم الفاتورة</label>
+                            <input type="text" class="form-control" id="credit-invoice-number" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">اسم العميل</label>
+                            <input type="text" class="form-control" id="credit-customer-name" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">المبلغ الإجمالي</label>
+                            <input type="text" class="form-control" id="credit-total-amount" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">المبلغ المتبقي</label>
+                            <input type="text" class="form-control" id="credit-remaining-amount" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="credit-payment-amount" class="form-label">المبلغ المسدد</label>
+                            <input type="number" class="form-control" id="credit-payment-amount" required min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="credit-payment-method" class="form-label">طريقة الدفع</label>
+                            <select class="form-select" id="credit-payment-method" required>
+                                <option value="نقدي">نقدي</option>
+                                <option value="بطاقة">بطاقة</option>
+                                <option value="تحويل">تحويل</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="confirm-payment-btn">تأكيد التسديد</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+      
+    <!-- Modal لإضافة منتج -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addProductModalLabel">إضافة منتج جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-product-form">
+                        <div class="mb-3">
+                            <label for="productName" class="form-label">اسم المنتج</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productBarcode" class="form-label">باركود المنتج (اختياري)</label>
+                            <input type="text" class="form-control" id="productBarcode">
+                        </div>
+                        <div class="mb-3">
+                            <label for="productCategory" class="form-label">الفئة</label>
+                            <select class="form-select" id="productCategory" required>
+                                <option value="">اختر الفئة</option>
+                                <option value="غذائية">غذائية</option>
+                                <option value="ملابس">ملابس</option>
+                                <option value="الكترونيات">الكترونيات</option>
+                                <option value="ادوات منزلية">ادوات منزلية</option>
+                                <option value="محروقات">محروقات</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productPrice" class="form-label">السعر (ريال يمني)</label>
+                            <input type="number" class="form-control" id="productPrice" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productCost" class="form-label">التكلفة (ريال يمني)</label>
+                            <input type="number" class="form-control" id="productCost" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productQuantity" class="form-label">الكمية</label>
+                            <input type="number" class="form-control" id="productQuantity" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productSupplier" class="form-label">المورد</label>
+                            <select class="form-select" id="productSupplier">
+                                <option value="">اختر المورد</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productExpiry" class="form-label">تاريخ انتهاء الصلاحية (اختياري)</label>
+                            <input type="date" class="form-control" id="productExpiry">
+                        </div>
+                        <div class="mb-3">
+                            <label for="productImage" class="form-label">صورة المنتج (اختياري)</label>
+                            <input type="file" class="form-control" id="productImage" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label for="productDescription" class="form-label">وصف المنتج</label>
+                            <textarea class="form-control" id="productDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="save-product-btn">حفظ المنتج</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لتعديل منتج -->
+    <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProductModalLabel">تعديل المنتج</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-product-form">
+                        <input type="hidden" id="editProductId">
+                        <div class="mb-3">
+                            <label for="editProductName" class="form-label">اسم المنتج</label>
+                            <input type="text" class="form-control" id="editProductName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductBarcode" class="form-label">باركود المنتج</label>
+                            <input type="text" class="form-control" id="editProductBarcode">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductCategory" class="form-label">الفئة</label>
+                            <select class="form-select" id="editProductCategory" required>
+                                <option value="غذائية">غذائية</option>
+                                <option value="ملابس">ملابس</option>
+                                <option value="الكترونيات">الكترونيات</option>
+                                <option value="ادوات منزلية">ادوات منزلية</option>
+                                <option value="محروقات">محروقات</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductPrice" class="form-label">السعر (ريال يمني)</label>
+                            <input type="number" class="form-control" id="editProductPrice" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductCost" class="form-label">التكلفة (ريال يمني)</label>
+                            <input type="number" class="form-control" id="editProductCost" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductQuantity" class="form-label">الكمية</label>
+                            <input type="number" class="form-control" id="editProductQuantity" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductSupplier" class="form-label">المورد</label>
+                            <select class="form-select" id="editProductSupplier">
+                                <option value="">اختر المورد</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductExpiry" class="form-label">تاريخ انتهاء الصلاحية</label>
+                            <input type="date" class="form-control" id="editProductExpiry">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductImage" class="form-label">صورة المنتج</label>
+                            <input type="file" class="form-control" id="editProductImage" accept="image/*">
+                            <div id="current-image-container" class="mt-2"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductDescription" class="form-label">وصف المنتج</label>
+                            <textarea class="form-control" id="editProductDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="update-product-btn">تحديث المنتج</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لإضافة مورد -->
+    <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSupplierModalLabel">إضافة مورد جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-supplier-form">
+                        <div class="mb-3">
+                            <label for="supplierName" class="form-label">اسم المورد</label>
+                            <input type="text" class="form-control" id="supplierName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierContact" class="form-label">اسم جهة الاتصال</label>
+                            <input type="text" class="form-control" id="supplierContact">
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierPhone" class="form-label">رقم الهاتف</label>
+                            <input type="tel" class="form-control" id="supplierPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierEmail" class="form-label">البريد الإلكتروني</label>
+                            <input type="email" class="form-control" id="supplierEmail">
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierAddress" class="form-label">العنوان</label>
+                            <textarea class="form-control" id="supplierAddress" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supplierProducts" class="form-label">المنتجات التي يوردها</label>
+                            <textarea class="form-control" id="supplierProducts" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="save-supplier-btn">حفظ المورد</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal للإعدادات -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalLabel">إعدادات المتجر</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="settings-form">
+                        <div class="mb-3">
+                            <label for="storeName" class="form-label">اسم المتجر</label>
+                            <input type="text" class="form-control" id="storeName" value="متجري">
+                        </div>
+                        <div class="mb-3">
+                            <label for="storeAddress" class="form-label">عنوان المتجر</label>
+                            <textarea class="form-control" id="storeAddress" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="storePhone" class="form-label">هاتف المتجر</label>
+                            <input type="tel" class="form-control" id="storePhone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="receiptFooter" class="form-label">تذييل الفاتورة</label>
+                            <textarea class="form-control" id="receiptFooter" rows="2">شكراً لشرائكم من متجرنا</textarea>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="enableBarcode">
+                            <label class="form-check-label" for="enableBarcode">تمكين مسح الباركود</label>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="enableDiscounts">
+                            <label class="form-check-label" for="enableDiscounts">تمكين نظام الخصومات</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="save-settings-btn">حفظ الإعدادات</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- باقي الـ Modals الأخرى -->
+    <!-- ... -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1"></script>
+
+    <!-- JavaScript المدمج -->
+    <script>
+        
+    </script>
+</body>
+</html>
